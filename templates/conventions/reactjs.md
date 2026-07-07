@@ -1,442 +1,273 @@
-# React Rules
+# React and TypeScript Rules
 
-## General Principles
+## Rule Priority
 
-- Follow the React and TypeScript versions configured by the project.
-- Follow the existing project structure, naming conventions, formatter, and linting rules.
-- Prefer simple, readable components over clever abstractions.
-- Keep components focused on one clear responsibility.
-- Separate presentation, state management, data access, and business logic where practical.
-- Prefer composition over inheritance.
-- Do not introduce new libraries when the existing project stack already provides an adequate solution.
-- Do not refactor unrelated components as part of a focused feature or bug fix.
-- Preserve existing behavior unless the change explicitly requires otherwise.
+- **Guardrails** are hard constraints unless an explicit repository requirement justifies an exception.
+- **Quality Gates** define what must be verified before React work is reported as complete.
+- **Conventions** are default implementation preferences and should follow established repository style when it differs and remains sound.
+- **Heuristics** are review signals, not automatic failures.
+- **Conditional Guidance** applies only when the relevant frontend capability is used.
 
 ------
 
-## TypeScript
+## Guardrails
 
-- Use TypeScript for new React code when the project supports it.
-- Avoid `any`.
-- Use `unknown` for values whose type is not yet known, then narrow the type safely.
-- Define explicit types for component props, API responses, shared state, and reusable functions.
-- Prefer inferred types for obvious local variables.
-- Avoid unnecessary type assertions.
-- Do not use `as` merely to silence a compiler error.
-- Avoid non-null assertions unless the invariant is guaranteed and documented.
-- Use union types for constrained values.
-- Prefer discriminated unions for state with distinct variants.
-- Use `interface` or `type` consistently with the project convention.
-- Do not duplicate backend-generated contract types manually when generated types are available.
-- Keep domain types separate from raw API transport models when their responsibilities differ.
-- Use `readonly` for values and structures that should not be mutated.
-- Avoid enums when string literal unions are simpler and consistent with the project.
+- Do not use `any` to bypass type safety.
+- Do not silence TypeScript, lint, or hook dependency errors without addressing the underlying issue.
+- Do not put secrets or credentials in frontend source code or frontend environment variables.
+- Do not treat frontend validation, route guards, or hidden UI controls as security or authorization boundaries.
+- Do not render untrusted HTML without an approved sanitization boundary.
+- Do not expose raw backend exceptions, stack traces, or sensitive payloads to users or logs.
+- Do not mutate React props or state.
+- Do not call hooks conditionally or outside React components and custom hooks.
+- Do not use unstable, random, or reorder-sensitive list keys.
+- Do not scatter raw API calls and duplicated transport handling across presentation components.
+- Do not introduce a second routing, styling, form, state-management, or server-state library without a clear need.
+- Do not disable relevant tests or checks merely to make the build pass.
 
 ------
 
-## Components
+## Quality Gates
+
+Before reporting React work as complete:
+
+- TypeScript type checking must pass.
+- Repository-required linting and formatting checks must pass.
+- Relevant automated tests must pass.
+- The production build must pass.
+- New user-visible behavior must cover loading, success, empty, validation, and error states where applicable.
+- Important forms must prevent accidental duplicate submission and preserve recoverable user input.
+- Shareable URL state must survive refresh and browser back/forward navigation when the feature requires it.
+- Interactive controls must be keyboard accessible and have accessible names.
+- Critical user journeys must have integration or end-to-end coverage when component tests do not provide sufficient confidence.
+- Failed, skipped, or unavailable verification steps must be reported accurately.
+
+------
+
+## Conventions
+
+### Project Structure
+
+- Follow the repository's existing structure, naming, formatter, linting, and import conventions.
+- Package-by-feature and package-by-type are both valid; choose one consistent with the repository and project scale.
+- Keep presentation, state, data access, mapping, and business behavior clearly separated.
+- Keep feature-specific code with the feature that owns it.
+- Put code in shared areas only when it is genuinely reused.
+- Avoid `common`, `shared`, or `utils` dumping grounds.
+- Do not reorganize an established project merely to match a template.
+
+### TypeScript
+
+- Define explicit types for public component props, API contracts, shared state, and reusable functions.
+- Use `unknown` for unknown input and narrow it safely.
+- Prefer inference for obvious local values.
+- Avoid unnecessary assertions and non-null assertions.
+- Use unions and discriminated unions for constrained and stateful variants.
+- Keep domain models separate from raw transport models when their responsibilities differ.
+- Prefer readonly data where mutation is not intended.
+- Use the repository's established `type` or `interface` convention.
+
+### Components
 
 - Use functional components.
-- Keep components small, cohesive, and focused.
-- Extract a component when it represents a meaningful UI concept, is reused, has independent behavior, or materially improves readability.
-- Do not extract trivial markup into separate components without a clear benefit.
-- Avoid components that combine data fetching, complex business logic, and large presentation trees.
-- Keep page-level components responsible for composition and coordination.
-- Keep reusable UI components independent from page-specific business logic.
-- Use meaningful component names.
-- Use PascalCase for component names.
-- Keep one primary component per file unless closely related small components are clearer together.
-- Avoid defining components inside other components unless there is a specific reason.
-- Do not mutate props.
-- Prefer explicit props over passing large generic configuration objects.
-- Avoid excessive boolean props that create many behavior combinations.
-- Use variant props or separate components when behavior differs substantially.
-- Prefer `children` for natural composition.
-- Avoid wrapper components that provide no meaningful behavior or styling abstraction.
+- Keep each component centered on one primary UI responsibility.
+- Keep page components focused on composition and coordination.
+- Extract components when they represent meaningful UI concepts, are reused, own independent behavior, or materially improve readability.
+- Keep trivial markup together when extraction would fragment the flow.
+- Prefer composition and explicit props.
+- Avoid excessive boolean props that create many behavioral combinations.
+- Use semantic names and one primary component per file unless closely related small components are clearer together.
 
-------
+### State
 
-## Props
+- Keep state as local as practical and lift it only when multiple consumers need one source of truth.
+- Derive values instead of duplicating them in state.
+- Keep server state, URL state, form state, application state, and local UI state conceptually distinct.
+- Use immutable and functional updates when the next value depends on previous state.
+- Use `useReducer` when transitions are complex and action-oriented.
+- Keep bookmarkable, refreshable, or shareable filters, tabs, and pagination in the URL.
+- Avoid global state for local, temporary UI behavior.
 
-- Define props explicitly.
-- Use descriptive prop names.
-- Avoid vague names such as `data`, `item`, `value`, or `handler` when a more specific name is available.
-- Prefix event callback props with `on`, such as `onSave` or `onSelectionChange`.
-- Do not pass entire domain objects when the component only requires a few fields, unless doing so clearly improves maintainability.
-- Avoid prop drilling across many levels.
-- Use component composition, local context, or an approved state-management approach when data must cross distant component boundaries.
-- Do not introduce global state solely to avoid passing one or two props.
-- Provide sensible defaults only when they represent valid product behavior.
-- Avoid optional props whose absence produces ambiguous behavior.
+### Hooks and Effects
 
-------
+- Use custom hooks for meaningful reusable stateful behavior.
+- Keep hooks focused and expose a clear interface.
+- Use effects only to synchronize with external systems.
+- Prefer rendering calculations and event handlers over state-synchronizing effects.
+- Clean up subscriptions, timers, observers, listeners, and cancellable requests.
+- Prevent stale asynchronous results from overwriting newer state.
+- Keep dependency lists correct and avoid chains of effects.
 
-## State
+### Data Access and API Clients
 
-- Keep state as local as possible.
-- Lift state only when multiple components need a shared source of truth.
-- Do not store values in state when they can be derived from props or other state.
-- Avoid duplicated state.
-- Avoid keeping synchronized copies of the same data in multiple places.
-- Prefer immutable state updates.
-- Do not mutate arrays or objects held in React state.
-- Use functional state updates when the next value depends on the previous value.
-- Group related state when it changes together.
-- Keep unrelated state separate.
-- Use `useReducer` when state transitions are complex, tightly related, or action-oriented.
-- Avoid global state for temporary UI concerns such as a single dialog or local form.
-- Clearly distinguish server state, application state, form state, URL state, and local component state.
-- Store filter, search, pagination, or tab state in the URL when users should be able to bookmark, refresh, or share it.
-- Do not store sensitive information in browser state unless explicitly required and appropriately protected.
-
-------
-
-## Hooks
-
-- Follow the Rules of Hooks.
-- Call hooks only at the top level of React components or custom hooks.
-- Do not call hooks conditionally.
-- Use custom hooks to reuse meaningful stateful behavior.
-- Name custom hooks with the `use` prefix.
-- Keep custom hooks focused on one concern.
-- Do not create custom hooks merely to wrap one trivial built-in hook.
-- Return a clear and stable interface from custom hooks.
-- Avoid custom hooks with excessive arguments or unrelated responsibilities.
-- Do not hide major side effects behind misleading hook names.
-- Clean up subscriptions, timers, observers, and event listeners.
-- Avoid stale closures by managing dependencies correctly.
-- Do not suppress hook dependency lint rules without a clear documented reason.
-
-------
-
-## Effects
-
-- Use `useEffect` only to synchronize React with an external system.
-- Do not use effects for values that can be calculated during rendering.
-- Do not use effects to synchronize one piece of React state with another unless unavoidable.
-- Avoid chains of effects that trigger one another.
-- Keep each effect focused on one synchronization concern.
-- Include all required dependencies.
-- Do not disable exhaustive dependency checks merely to stop repeated execution.
-- Make effect cleanup explicit when registering listeners, subscriptions, timers, or asynchronous work.
-- Prevent outdated asynchronous responses from overwriting newer state.
-- Use an abort signal or equivalent cancellation mechanism for cancellable requests.
-- Avoid fetching data directly in multiple components when the project provides a standard server-state or data-fetching layer.
-- Do not place event-driven logic in an effect when it can run directly from the event handler.
-
-------
-
-## Memoization
-
-- Do not use `useMemo`, `useCallback`, or `React.memo` by default.
-- Use memoization only when measurement shows a meaningful problem, referential stability is required, or a calculation is genuinely expensive.
-- Do not add memoization merely to satisfy perceived best practice.
-- Keep dependency lists accurate.
-- Remove memoization that adds complexity without measurable benefit.
-- Prefer simpler component boundaries before adding broad memoization.
-
-------
-
-## Data Fetching
-
-- Use the project’s standard data-fetching approach.
-- Do not introduce a second server-state library without a clear reason.
-- Keep API access in dedicated client, service, or query modules.
-- Do not scatter raw `fetch` or HTTP client calls across presentation components.
-- Use typed request and response models.
+- Use the project's standard data-fetching and API-client approach.
+- Centralize base URLs, shared headers, authentication behavior, timeouts, cancellation, and transport-error handling.
+- Keep endpoint functions focused and typed.
+- Map raw transport failures to stable frontend error types and safe user messages.
 - Handle loading, empty, success, and error states explicitly.
-- Avoid treating an empty successful result as an error.
-- Cancel or ignore outdated requests where race conditions are possible.
-- Do not retry permanent failures such as validation or authorization errors.
-- Use bounded retries for transient failures only.
-- Avoid duplicate requests for the same data.
-- Use caching according to product freshness requirements.
-- Invalidate or update cached data after mutations.
-- Do not rely on stale data when correctness requires an immediate refresh.
-- Keep transport error details out of user-facing messages.
-- Map technical failures to clear and safe UI messages.
-- Preserve correlation or trace identifiers when useful for support.
+- Cancel or ignore stale requests where races are possible.
+- Retry only safe transient failures with bounded behavior.
+- Update or invalidate server state after mutations according to product consistency needs.
 
-------
+### Forms
 
-## API Clients
+- Keep simple forms simple and use the repository's established form approach.
+- Validate on both client and server; treat client validation as user feedback.
+- Associate labels and errors with their controls.
+- Show field-level errors near fields and a form-level error for non-field failures.
+- Preserve input after recoverable failures.
+- Prevent duplicate submission and show submission progress.
+- Normalize input only when normalization is part of the product contract.
+- Use appropriate input types, autocomplete attributes, input modes, fieldsets, and legends.
 
-- Centralize base URLs, shared headers, authentication behavior, timeouts, and error handling.
-- Do not hardcode API URLs inside components.
-- Do not include secrets in frontend source code or frontend environment variables.
-- Treat all frontend environment variables as publicly visible.
-- Use a shared API client where the project provides one.
-- Keep endpoint-specific functions focused and typed.
-- Translate raw API errors into stable frontend error types.
-- Do not expose raw stack traces or internal server messages to users.
-- Handle authentication expiration consistently.
-- Avoid silent failures.
-- Do not log sensitive request or response payloads.
-- Use request cancellation where supported.
-- Avoid coupling UI components directly to backend response shapes when mapping improves clarity or stability.
-
-------
-
-## Forms
-
-- Use the project’s standard form-management approach.
-- Keep simple forms simple.
-- Do not introduce a form library for a trivial one-field form unless the project already standardizes on one.
-- Use controlled or uncontrolled inputs consistently.
-- Keep form state separate from unrelated page state.
-- Validate input on both client and server.
-- Treat client-side validation as user feedback, not a security boundary.
-- Display validation errors close to the relevant field.
-- Provide a form-level error for failures not associated with one field.
-- Preserve user input after recoverable submission failures.
-- Disable or otherwise protect against accidental duplicate submissions.
-- Do not permanently disable the submit button when the user needs feedback about invalid input.
-- Show clear submission progress.
-- Handle asynchronous validation carefully to avoid race conditions.
-- Normalize input only when it is part of the product contract.
-- Do not silently alter meaningful user input.
-- Use appropriate input types, autocomplete attributes, and input modes.
-- Associate labels with form controls.
-- Use fieldsets and legends for related groups of controls where appropriate.
-
-------
-
-## Event Handling
-
-- Use clear event handler names such as `handleSubmit` and `handleDelete`.
-- Use `onSubmit`, `onDelete`, or equivalent names for callback props.
-- Keep event handlers focused.
-- Move complex business logic out of JSX.
-- Do not use inline handlers when they contain substantial logic.
-- Prevent duplicate actions when an operation is already in progress.
-- Do not use `preventDefault` or `stopPropagation` without understanding the interaction impact.
-- Ensure keyboard interaction works for custom controls.
-- Use semantic buttons for actions instead of clickable `div` or `span` elements.
-
-------
-
-## Rendering
+### Rendering and Events
 
 - Keep render logic declarative.
-- Avoid deeply nested JSX.
-- Extract complex conditions into clearly named variables.
-- Prefer early returns for loading, error, or unavailable states when they improve readability.
-- Avoid nested ternary expressions.
-- Use stable and meaningful keys for lists.
-- Do not use array indexes as keys when items can be inserted, removed, or reordered.
-- Do not generate random keys during rendering.
-- Do not mutate collections while rendering.
-- Keep expensive computation out of render paths unless it is small or intentionally memoized.
-- Handle null, empty, loading, and partial data states intentionally.
-- Avoid rendering raw HTML.
-- Use `dangerouslySetInnerHTML` only with trusted and sanitized content.
+- Prefer early returns and named conditions over deeply nested JSX or ternaries.
+- Keep substantial business logic out of JSX and event handlers.
+- Use semantic buttons for actions and links for navigation.
+- Keep list keys stable and meaningful.
+- Handle null, partial, loading, empty, and error states intentionally.
+- Do not mutate data during rendering.
 
-------
+### Styling
 
-## Styling
-
-- Follow the styling system already used by the project.
-- Do not introduce another styling approach without a clear reason.
-- Reuse existing design tokens, spacing, typography, and components.
-- Avoid hardcoded colors, sizes, and spacing when design tokens are available.
-- Keep styles close to the component or feature according to project convention.
-- Avoid overly broad global CSS selectors.
-- Do not rely on fragile DOM nesting for styling.
-- Use responsive layouts intentionally.
-- Test common viewport sizes.
+- Follow the styling system and design tokens already used by the project.
+- Avoid broad global selectors and fragile DOM-dependent styling.
+- Support responsive layouts, text expansion, and consistent interaction states.
+- Do not use color as the only means of communication.
 - Avoid fixed dimensions that cause clipping or overflow.
-- Support text expansion where localization is possible.
-- Keep visual state consistent for hover, focus, active, disabled, loading, success, and error conditions.
-- Do not use color as the only way to communicate meaning.
 
-------
+### Accessibility
 
-## Accessibility
+- Prefer semantic HTML and native controls.
+- Ensure every interactive element is keyboard accessible and visibly focusable.
+- Provide accessible names, labels, logical headings, and meaningful alternative text.
+- Use ARIA only when native semantics are insufficient.
+- Manage and restore focus for dialogs and other modal interactions.
+- Associate validation errors with inputs and announce important asynchronous status changes when appropriate.
+- Respect contrast and reduced-motion requirements.
 
-- Use semantic HTML.
-- Use native HTML elements before building custom equivalents.
-- Every interactive element must be keyboard accessible.
-- Use `button` for actions and `a` for navigation.
-- Provide accessible names for controls and icons.
-- Associate labels with inputs.
-- Use heading levels in a logical order.
-- Provide meaningful alternative text for informative images.
-- Use empty alternative text for decorative images.
-- Ensure visible keyboard focus.
-- Do not remove focus outlines without providing an accessible replacement.
-- Manage focus when opening and closing dialogs.
-- Keep keyboard focus inside modal dialogs while they are open where appropriate.
-- Restore focus after closing a dialog.
-- Use ARIA only when semantic HTML is insufficient.
-- Do not add redundant or incorrect ARIA attributes.
-- Announce important asynchronous status changes where appropriate.
-- Ensure error messages are associated with the relevant input.
-- Maintain sufficient color contrast.
-- Respect reduced-motion preferences for non-essential animation.
+### Navigation and Routing
 
-------
+- Use the repository's routing library and organization.
+- Preserve direct navigation, refresh, back, and forward behavior.
+- Keep shareable page state in the URL when appropriate.
+- Provide a clear not-found experience.
+- Use route protection for usability while enforcing real authorization on the server.
+- Lazy-load large route-level bundles only when it materially helps.
 
-## Navigation and Routing
+### Error, Loading, and Empty States
 
-- Use the routing library already configured by the project.
-- Keep route definitions centralized or consistently organized.
-- Use navigation components rather than manually changing browser location.
-- Preserve browser back and forward behavior.
-- Keep shareable page state in the URL where appropriate.
-- Handle unknown routes with a clear not-found page.
-- Protect restricted routes, but do not rely on frontend route guards as the authorization boundary.
-- Avoid embedding permission-sensitive data in the frontend bundle.
-- Support direct navigation and page refresh for valid routes.
-- Use lazy loading for large route-level bundles where it materially improves performance.
+- Handle expected API and UI failures explicitly.
+- Use error boundaries for unexpected render failures at appropriate application boundaries.
+- Provide safe explanations and useful recovery actions.
+- Distinguish loading, no data, no matches, partial data, and load failure.
+- Preserve existing content during background refresh when appropriate.
+- Log unexpected failures once through the approved monitoring boundary.
 
-------
-
-## Error Handling
-
-- Handle expected UI and API failures explicitly.
-- Use error boundaries for unexpected rendering failures at appropriate application boundaries.
-- Do not use error boundaries as a replacement for normal error handling.
-- Provide users with clear recovery actions where possible.
-- Avoid generic messages such as “Something went wrong” when a safe and useful explanation is available.
-- Do not expose raw backend exception messages.
-- Preserve technical diagnostic information in approved monitoring tools rather than displaying it to users.
-- Log unexpected errors once through the project’s monitoring mechanism.
-- Avoid repeatedly logging the same error from multiple components.
-- Handle chunk-loading and network failures gracefully when relevant.
-- Keep critical navigation and recovery options available after a failure.
-
-------
-
-## Loading and Empty States
-
-- Show loading indicators when operations are not immediate.
-- Avoid unnecessary full-page loading states for small local updates.
-- Preserve existing content during background refresh where appropriate.
-- Use skeletons only when they improve perceived continuity.
-- Ensure loading indicators are accessible.
-- Distinguish between no data, no matching results, load failure, and loading.
-- Provide an appropriate next action for empty states.
-- Avoid flashing empty states before loading has completed.
-
-------
-
-## Performance
+### Performance
 
 - Measure before optimizing.
-- Avoid unnecessary re-renders caused by unstable props or duplicated state.
-- Split large route-level bundles where appropriate.
-- Lazy-load heavy features that are not required for the initial render.
-- Avoid shipping large libraries for small functionality.
-- Optimize large lists with pagination, windowing, or incremental rendering when needed.
-- Avoid loading full datasets into the browser when server-side filtering or pagination is available.
-- Optimize images and use appropriate formats and sizes.
-- Avoid blocking the main thread with expensive synchronous work.
-- Move heavy processing to a worker only when justified.
-- Do not sacrifice maintainability for minor theoretical performance gains.
-- Track important user-facing performance metrics where the project supports it.
+- Avoid duplicated state, unstable props, and unnecessary large browser datasets.
+- Use pagination, incremental rendering, or windowing for genuinely large lists.
+- Lazy-load heavy features when initial-load cost justifies it.
+- Avoid large libraries for small functionality.
+- Prefer maintainability over minor theoretical gains.
 
-------
+### Testing
 
-## Security
-
-- Do not store secrets in frontend code.
-- Do not assume environment variables in the frontend are private.
-- Escape untrusted content.
-- Avoid rendering unsanitized HTML.
-- Do not build authorization decisions solely in the frontend.
-- Hide unavailable actions for usability, but enforce access control on the server.
-- Avoid storing long-lived authentication tokens in insecure browser storage when a safer project-approved approach exists.
-- Follow the project’s authentication and session-management model.
-- Protect state-changing operations against cross-site request forgery where applicable.
-- Do not log tokens, credentials, personal data, or sensitive payloads.
-- Validate redirect targets to prevent open redirects.
-- Use dependency versions approved by the project.
-- Do not disable security tooling merely to make the build pass.
-
-------
-
-## Testing
-
-- Use the testing tools already configured by the project.
-- Prefer tests that reflect how users interact with the interface.
-- Test observable behavior rather than internal implementation details.
-- Query elements by accessible role, label, or visible text where practical.
-- Avoid testing internal component state directly.
-- Avoid relying heavily on CSS selectors or implementation-specific test IDs.
-- Use test IDs only when semantic queries are not practical.
-- Cover rendering, user interactions, validation, loading, empty, error, permission-dependent, and important accessibility behavior.
-- Mock network boundaries rather than internal functions where practical.
-- Avoid excessive snapshot testing.
-- Use snapshots only for stable, intentionally reviewed output.
+- Use the testing tools already configured by the repository.
+- Test behavior through user-visible interactions rather than internal state.
+- Prefer accessible roles, labels, and visible text over implementation-specific selectors.
+- Mock network boundaries rather than internal implementation details.
+- Keep tests deterministic and await visible behavior instead of arbitrary sleeps.
+- Cover important rendering, interaction, validation, loading, empty, error, retry, permission, and accessibility behavior.
 - Add regression tests for fixed defects.
-- Keep tests deterministic.
-- Avoid arbitrary sleep-based waits.
-- Await visible application behavior.
-- Do not make tests depend on execution order.
-- Use end-to-end tests for critical user journeys.
-- Test prevention of duplicate submissions and preservation of form values after recoverable failures.
-- Test server field errors, state conflicts, retry behavior, and stale-response handling where those states are supported.
-- Test that shareable URL state survives refresh and back/forward navigation.
+- Use end-to-end tests for critical journeys when lower-level tests cannot provide sufficient confidence.
+- Test duplicate-submission prevention, recoverable form state, stale-response handling, and URL-state behavior when relevant.
 
+### Imports and Dependencies
 
-------
+- Follow repository import ordering and path alias conventions.
+- Avoid circular imports and imports from another feature's private internals.
+- Use public feature exports where established.
+- Avoid broad barrel files that create cycles or oversized bundles.
+- Remove unused imports and avoid importing entire libraries when smaller supported imports exist.
+- Prefer existing dependencies and platform APIs before adding libraries.
 
-## File and Feature Structure
+### Documentation
 
-Follow the existing project structure. When no clear structure exists, group code by feature for medium or large applications.
-
-```text
-src/
-├── app/
-│   ├── routing/
-│   ├── providers/
-│   └── configuration/
-├── features/
-│   └── orders/
-│       ├── api/
-│       ├── components/
-│       ├── hooks/
-│       ├── pages/
-│       ├── types/
-│       └── utils/
-├── shared/
-│   ├── components/
-│   ├── hooks/
-│   ├── api/
-│   ├── types/
-│   └── utils/
-└── main.tsx
-```
-
-- Keep feature-specific code inside its feature.
-- Put code in `shared` only when it is genuinely reused across multiple features.
-- Avoid turning `shared`, `common`, or `utils` into dumping grounds.
-- Keep API functions, types, tests, and components near the feature that owns them.
-- Avoid importing internal feature implementation details from unrelated features.
-- Expose a clear public boundary when features depend on one another.
-- Do not reorganize an established project solely to match this example.
+- Document reusable components, side effects, accessibility expectations, and browser workarounds when types and code are not sufficient.
+- Keep component examples and user-facing behavior documentation synchronized.
+- Avoid comments that merely restate JSX.
 
 ------
 
-## Imports
+## Heuristics
 
-- Follow the project’s import ordering rules.
-- Prefer stable configured path aliases over deeply nested relative imports.
-- Do not introduce path aliases without updating the build, test, and editor configuration consistently.
-- Avoid circular imports.
-- Avoid importing from another feature’s internal files.
-- Use package or feature public exports where the project defines them.
-- Do not create broad barrel files that cause circular dependencies or oversized bundles.
-- Remove unused imports.
-- Avoid importing entire libraries when smaller supported imports are available.
+- Review a component when it mixes data fetching, complex business rules, many state transitions, and a large presentation tree.
+- Many boolean props may indicate that variants or separate components would be clearer.
+- Prop drilling across several unrelated levels may indicate a composition, context, or state-boundary problem.
+- Repeated raw API error handling may indicate that transport mapping belongs in a shared client boundary.
+- Multiple effects that update one another may indicate derived state or event logic was modeled incorrectly.
+- A large page component may need decomposition when size comes from mixed concerns rather than cohesive presentation.
+- Repeated pagination, sorting, URL parsing, or form-error mapping may justify a focused hook or support module.
+- Extensive `useMemo`, `useCallback`, or `React.memo` may indicate premature optimization.
+- A custom hook that only wraps one trivial built-in hook may add indirection without value.
+- Add state-management, form, UI, or server-state libraries only when they address a current requirement or established project standard.
 
 ------
 
-## Documentation
+## Conditional Guidance
 
-- Document reusable components with non-obvious behavior.
-- Document required props, constraints, side effects, and accessibility expectations where they are not clear from types.
-- Keep examples for shared UI components where the project uses a component catalog.
-- Do not add comments that merely restate JSX.
-- Explain unusual browser workarounds and link them to a relevant issue where possible.
-- Keep user-facing text and behavior documentation synchronized with the implementation.
+Apply only when the feature or existing repository uses the relevant capability.
+
+### Memoization
+
+- Use `useMemo`, `useCallback`, and `React.memo` only for measured cost, expensive work, or required referential stability.
+- Keep dependencies correct and remove memoization that adds complexity without benefit.
+
+### Advanced Server-State Management
+
+- Use the repository's established query library.
+- Define freshness, retries, invalidation, optimistic updates, and conflict behavior explicitly.
+- Do not maintain a second manual cache for the same server data.
+
+### Global State
+
+- Introduce global state only for genuinely cross-cutting application state.
+- Keep local UI and form state local.
+- Define ownership, update boundaries, persistence, and reset behavior.
+
+### Authentication and Security
+
+- Follow the repository's session and token model.
+- Avoid insecure long-lived browser storage when safer approved options exist.
+- Protect state-changing operations against CSRF where applicable.
+- Validate redirects and avoid logging tokens or sensitive data.
+- Keep authorization enforcement on the server.
+
+### Internationalization
+
+- Keep user-facing text externalized according to project convention.
+- Support text expansion, locale-aware formatting, pluralization, and right-to-left layout when required.
+- Do not construct translatable sentences from fragmented strings.
+
+### Large Lists and Virtualization
+
+- Use pagination or incremental loading before rendering unbounded datasets.
+- Apply windowing only when list size and rendering cost justify it.
+- Preserve keyboard navigation, focus, and accessibility semantics.
+
+### Component Libraries and Design Systems
+
+- Reuse approved components and tokens.
+- Keep wrappers focused on meaningful product behavior or consistency.
+- Do not create parallel primitives that compete with the existing design system.
+
+### Monitoring
+
+- Report unexpected frontend failures through the approved monitoring boundary.
+- Include safe release, route, and correlation context where useful.
+- Avoid duplicate reporting and sensitive payloads.
