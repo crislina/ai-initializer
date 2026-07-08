@@ -24,6 +24,8 @@ export function normalizeBackend(value) {
   const aliases = {
     java: "java",
     jdk: "java",
+    python: "python",
+    py: "python",
     none: "none",
     no: "none",
     n: "none",
@@ -103,11 +105,35 @@ export function normalizeDatabase(value) {
   return normalized;
 }
 
+export function normalizeLevel(value) {
+  const input = String(value || "").trim().toLowerCase();
+
+  const aliases = {
+    lite: "lite",
+    light: "lite",
+    simple: "lite",
+    standard: "standard",
+    std: "standard",
+  };
+
+  const normalized = aliases[input];
+
+  if (!normalized) {
+    throw new Error(`Unsupported convention level: ${value}`);
+  }
+
+  return normalized;
+}
+
 export function buildStack({ backend, framework, frontend, database }) {
   const stack = ["ai"];
 
   if (backend === "java") {
     stack.push("java");
+  }
+
+  if (backend === "python") {
+    stack.push("python");
   }
 
   if (framework === "spring") {
@@ -122,7 +148,7 @@ export function buildStack({ backend, framework, frontend, database }) {
     stack.push("postgresql");
   }
 
-  if (stack.some((item) => ["java", "spring", "react"].includes(item))) {
+  if (stack.some((item) => ["java", "python", "spring", "react"].includes(item))) {
     stack.push("testing");
   }
 

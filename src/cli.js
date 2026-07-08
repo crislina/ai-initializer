@@ -7,6 +7,7 @@ import {
   normalizeFramework,
   normalizeFrontend,
   normalizeDatabase,
+  normalizeLevel,
   buildStack,
 } from "./core/options.js";
 
@@ -26,6 +27,8 @@ function parseArgs(argv) {
       args.frontend = argv[++i];
     } else if (["--database", "--db", "-d"].includes(arg)) {
       args.database = argv[++i];
+    } else if (["--level", "--tier", "--profile"].includes(arg)) {
+      args.level = argv[++i];
     } else if (["--force"].includes(arg)) {
       args.force = true;
     } else if (["--yes", "-y"].includes(arg)) {
@@ -49,14 +52,16 @@ Usage:
     --backend java \\
     --framework spring \\
     --frontend react \\
-    --database postgresql
+    --database postgresql \\
+    --level standard
 
 Options:
   --ai, -a              AI: claude, codex, cline
-  --backend, -b         Backend language: java, none
+  --backend, -b         Backend language: java, python, none
   --framework           Backend framework: spring, none
   --frontend, -f        Frontend framework: react, none
   --database, --db, -d  Database: postgresql, none
+  --level               Convention level: lite, standard
   --force               Overwrite existing generated files
   --yes, -y             Skip confirmation
   --help, -h            Show help
@@ -81,6 +86,7 @@ async function collectOptions(args) {
         message: "Backend language",
         choices: [
           { name: "Java", value: "java" },
+          { name: "Python", value: "python" },
           { name: "None", value: "none" },
         ],
       });
@@ -119,6 +125,24 @@ async function collectOptions(args) {
         ],
       });
 
+  const level = args.level
+    ? normalizeLevel(args.level)
+    : await select({
+        message: "Convention level",
+        choices: [
+          {
+            name: "Lite",
+            value: "lite",
+            description: "Small projects, demos, personal tools, and script-like repositories",
+          },
+          {
+            name: "Standard",
+            value: "standard",
+            description: "Formal business projects with end-to-end change discipline",
+          },
+        ],
+      });
+
   const stack = buildStack({ backend, framework, frontend, database });
 
   return {
@@ -127,6 +151,7 @@ async function collectOptions(args) {
     framework,
     frontend,
     database,
+    level,
     stack,
     force: Boolean(args.force),
     yes: Boolean(args.yes),
@@ -140,6 +165,7 @@ function printSummary(options) {
   console.log(`Framework: ${options.framework === "none" ? "None" : options.framework}`);
   console.log(`Frontend:  ${options.frontend === "none" ? "None" : options.frontend}`);
   console.log(`Database:  ${options.database === "none" ? "None" : options.database}`);
+  console.log(`Level:     ${options.level}`);
   console.log(`Stack:     ${options.stack.join(", ")}`);
 }
 
@@ -169,6 +195,7 @@ export async function runCli() {
     generate({
       adapter: options.adapter,
       stack: options.stack,
+      level: options.level,
       force: options.force,
       cwd: process.cwd(),
     });

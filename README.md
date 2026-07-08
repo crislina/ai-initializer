@@ -20,6 +20,7 @@ You will be prompted to choose:
 
 ? Backend language
 ❯ Java
+  Python
   None
 
 ? Backend framework
@@ -33,6 +34,10 @@ You will be prompted to choose:
 ? Database
 ❯ PostgreSQL
   None
+
+? Convention level
+❯ Lite
+  Standard
 ```
 
 ## Non-interactive Usage
@@ -44,6 +49,7 @@ npx ai-convention-init \
   --framework spring \
   --frontend react \
   --database postgresql \
+  --level standard \
   --yes
 ```
 
@@ -52,13 +58,29 @@ npx ai-convention-init \
 For Claude:
 
 ```text
+ai-convention.yaml
 CLAUDE.md
 conventions/
-  ai.md
-  java-spring.md
-  react.md
+  general.md
+  java.md
+  spring.md
+  reactjs.md
   postgresql.md
-  testing.md
+```
+
+The backend framework prompt is shown only when the backend language is Java.
+
+`ai-convention.yaml` records the generated project profile:
+
+```yaml
+assistant: claude
+ruleLevel: standard
+
+techStack:
+  - java
+  - spring
+  - react
+  - postgresql
 ```
 
 For Codex:
