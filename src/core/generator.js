@@ -18,6 +18,35 @@ function writeSafe(filePath, content, force) {
   console.log(`write ${path.relative(process.cwd(), filePath)}`);
 }
 
+function upsertEntry(filePath, content) {
+  const startMarker = "<!-- ai-convention-init:start -->";
+  const endMarker = "<!-- ai-convention-init:end -->";
+
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, content, "utf8");
+    console.log(`write ${path.relative(process.cwd(), filePath)}`);
+    return;
+  }
+
+  const existing = fs.readFileSync(filePath, "utf8");
+  const start = existing.indexOf(startMarker);
+  const end = existing.indexOf(endMarker);
+
+  if (start !== -1 && end !== -1 && end > start) {
+    const afterEnd = end + endMarker.length;
+    const next = `${existing.slice(0, start)}${content.trimEnd()}${existing.slice(afterEnd)}`;
+    fs.writeFileSync(filePath, next, "utf8");
+    console.log(`update ${path.relative(process.cwd(), filePath)} generated block`);
+    return;
+  }
+
+  const separator = existing.trimStart().length ? "\n\n" : "";
+  fs.writeFileSync(filePath, `${content.trimEnd()}${separator}${existing}`, "utf8");
+  console.log(`insert ${path.relative(process.cwd(), filePath)} generated block`);
+}
+
 function readTemplate(relativePath) {
   return fs.readFileSync(path.join(packageRoot, "templates", relativePath), "utf8");
 }
@@ -41,7 +70,7 @@ export function generate({ adapter, stack, level = "standard", force, cwd }) {
   const entry = adapter.generateEntry({ conventionFiles, stack });
 
   writeSafe(path.join(cwd, "ai-convention.yaml"), buildProjectConfig({ adapter, stack, level }), force);
-  writeSafe(path.join(cwd, adapter.entryFile), entry, force);
+  upsertEntry(path.join(cwd, adapter.entryFile), entry);
 
   for (const file of conventionFileSpecs) {
     writeSafe(
